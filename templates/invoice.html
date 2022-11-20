@@ -1,0 +1,158 @@
+{{ define "invoice" }}
+<html>
+  <head>
+    <title>{{.Title}}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <style>
+
+      body {
+	  font-family: -apple-system, BlinkMacSystemFont, avenir next, avenir, segoe ui, helvetica neue, helvetica, Cantarell, Ubuntu, roboto, noto, arial, sans-serif;
+
+	  margin: 2em auto;
+	  max-width: 650px;
+	  
+      }
+      
+      
+      a {
+	  color: black;
+      }
+
+      .company {
+	  font-family: Iowan Old Style, Apple Garamond, Baskerville, Times New Roman, Droid Serif, Times, Source Serif Pro, serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol;
+	  font-size: 2em;
+      }
+
+      table {
+	  table-layout: fixed;
+	  width: 100%;
+	  border-collapse: collapse;
+	  border: 1px solid black;
+      }
+
+      th {
+	  padding: 0.2em;
+	  border: 1px solid;
+      }
+      
+      td {
+	  padding: 0.4em;
+	  border: 1px solid;
+	  text-align: center;
+      }
+
+      .position {
+	  width: 10%;
+      }
+
+      .quantity {
+	  width: 10%;
+      }
+      .description {
+	  width: 50%;
+      }
+
+      .unit-price {
+	  width: 15%;
+      }
+      .total-price {
+	  width: 15%;
+      }
+
+      .subtotal {
+	  font-weight: bold;
+	  text-center: left;
+      }
+
+      .gst {
+	  font-weight: bold;
+	  text-center: left;
+      }
+
+      .total {
+	  font-weight: bold;
+	  text-center: left;
+      }
+
+      footer {
+	  margin-top: 3em;
+	  font-size: 0.9em;
+      }
+
+      /* Print styling */
+      @page {
+	  size: A4;
+	  margin: 1cm;
+      }
+
+
+    </style>
+    
+  </head>
+  <body>
+
+    <h1 class="company">
+      <a href="http://example.com">ExampleCo Pty Ltd</a>
+    </h1>
+    
+    <h1>Tax Invoice</h1>
+    <h3>To: {{.CustomerName}}</h3>
+    <h3>Date: {{.Date | date}}</h3>
+    <h3>Invoice Number: {{.Title}}</h3>
+    <table>
+      <thead>
+	<tr>
+	  <th class="position">#</th>
+	  <th class="quantity">Qty</th>
+	  <th class="description">Desc</th>
+	  <th class="unit-price">Unit Price ({{.CurrencyCode}})</th>
+	  <th class="total-price">Total Price ({{.CurrencyCode}})</th>
+	</tr>
+      </thead>
+      <tbody>
+	{{range .Items}}
+	<tr>
+	  <td class="position">{{.Position}}</td>
+	  <td class="quantity">{{.Quantity}}</td>
+	  <td class="description">{{.Description}}</td>
+	  <td class="unit-price">{{$.CurrencySymbol}}{{.UnitPrice | currency}}</td>
+	  <td class="total-price">{{$.CurrencySymbol}}{{.TotalPrice | currency}}</td>
+	</tr> 
+	  {{else}}<tr><td>no rows</td></tr>
+	{{end}}
+
+	<tr>
+	  <td></td>
+	  <td></td>
+	  <td></td>
+	  <td class="subtotal">Subtotal</td>
+	  <td>{{$.CurrencySymbol}}{{.Subtotal | currency}}</td>	
+	</tr>
+
+	<tr>
+	  <td></td>
+	  <td></td>
+	  <td></td>
+	  <td class="gst">GST</td>
+	  <td>{{$.CurrencySymbol}}{{.GST | currency}}</td>	
+	</tr>
+
+
+	<tr>
+	  <td></td>
+	  <td></td>
+	  <td></td>
+	  <td class="total">Total</td>
+	  <td>{{$.CurrencySymbol}}{{.Total | currency}}</td>	
+	</tr>
+
+	
+      </tbody>
+    </table>
+    <footer>
+      Invoice created with <a href="https://github.com/minimalistsoftware/docutron">Docutron</a>.
+    </footer>
+  </body>
+</html>
+{{ end }}

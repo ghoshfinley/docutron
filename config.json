@@ -1,0 +1,11 @@
+{
+    "GSTPercent": 10,
+    "Invoice": {
+	"NumOffset": 0,
+	"Template": "templates/invoice.html",
+	"Prefix": "INV",
+	"CompanyName": "ExampleCo",
+	"CompanyURL" : "http://example.com"
+    }
+
+}

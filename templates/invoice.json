@@ -1,0 +1,25 @@
+{
+    "title": "",
+    "customer_name": "My favourite customer",
+    "date": "2022-11-17T21:07:37.483252566+11:00",
+    "gst_applies": true,
+    "items": [
+	{
+	    "position": 1,
+	    "quantity": 1,
+	    "description": "A great Product",
+	    "unit_price_dollars": 100.50
+	},
+	{
+	    "position": 2,
+	    "quantity": 5,
+	    "description": "Another really great Product",
+	    "unit_price_dollars": 100
+	}
+    ],
+    "currency_code": "AUD",
+    "currency_symbol": "$",
+    "subtotal ": 0,
+    "gst": 0,
+    "total": 0
+}
