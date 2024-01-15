@@ -11,6 +11,23 @@ import (
 	"golang.org/x/text/message"
 )
 
+type InvoiceConfig struct {
+	GSTPercent int `json:"GSTPercent"`
+	Invoice    struct {
+		NumOffset   int    `json:"NumOffset"`   // padd this to the numbers generated
+		Template    string `json:"Template"`    // path to template file
+		Prefix      string `json:"Prefix"`      // prefix to the numeric filename. eg. MIN to generate MIN46
+		CompanyName string `json:"CompanyName"` // TODO this should move out of the Invoice struct
+		CompanyURL  string `json:"CompanyURL"`
+	}
+}
+
+type UserRequest struct {
+	Project string        `json:"project"`
+	Config  InvoiceConfig `json:"config"`
+	Items   []LineItem    `json:"items"`
+}
+
 type Invoice struct {
 	Title          string     `json:"title"`
 	CustomerName   string     `json:"customer_name"`
@@ -37,14 +54,14 @@ type LineItem struct {
 var config Config
 
 // WriteHTML outputs html/name.html.
-func WriteHTML(inv Invoice, name string, templatePath string) {
+func WriteHTML(req UserRequest, inv Invoice, templatePath string) {
 
 	funcMap := template.FuncMap{
 		"currency": CentsToString,
 		"date":     FormatDate,
 	}
 
-	fileName := fmt.Sprintf("html/%s.html", inv.Title)
+	fileName := fmt.Sprintf("%s/html/%s.html", req.Project, inv.Title)
 
 	fh, err := os.Create(fileName)
 	check(err)
@@ -64,7 +81,7 @@ func check(err error) {
 	}
 }
 
-func CalculateTotals(inv Invoice) Invoice {
+func CalculateTotals(GSTPercent int, inv Invoice) Invoice {
 	var newItems []LineItem
 
 	var subtotal int
@@ -79,16 +96,16 @@ func CalculateTotals(inv Invoice) Invoice {
 	}
 	inv.Subtotal = subtotal
 	inv.Items = newItems
-	if inv.GSTApplies {
-		inv.GST = subtotal / config.GSTPercent
+	if inv.GSTApplies && GSTPercent != 0 {
+		inv.GST = subtotal / GSTPercent
 	}
 	inv.Total = inv.Subtotal + inv.GST
 	return inv
 }
 
 // NewJSONFile creates a new file json/name.json.
-func NewJSONFile(name string) {
-	fpath := fmt.Sprintf("json/%s.json", name)
+func NewJSONFile(req UserRequest, name string) Invoice {
+	fpath := fmt.Sprintf("%s/json/%s.json", req.Project, name)
 	fh, err := os.Create(fpath)
 	check(err)
 	defer fh.Close()
@@ -104,8 +121,9 @@ func NewJSONFile(name string) {
 	// Add the new title and current date.
 	inv.Title = name
 	inv.Date = time.Now()
+	inv.Items = req.Items
 
-	inv = CalculateTotals(inv)
+	inv = CalculateTotals(req.Config.GSTPercent, inv)
 
 	b, err := json.MarshalIndent(inv, "", " ")
 	check(err)
@@ -113,6 +131,9 @@ func NewJSONFile(name string) {
 	_, err = fh.Write(b)
 	check(err)
 	log.Printf("wrote %s", fpath)
+
+	// Return final Invoice for use
+	return inv
 }
 
 // UnmarshalJSONFile opens a file in json/name.json.
@@ -136,10 +157,11 @@ func MarshalJSONFile(inv Invoice, name string) {
 
 // NextNumber determines the next filename number based on number of files in json/ directory + 1.
 // TODO make this aware of different document types.
-func NextNumber() int {
-	config := ReadConfig()
-	offset := config.Invoice.NumOffset //Read offset from Config file
-	entries, err := os.ReadDir("json/")
+func NextNumber(req UserRequest) int {
+	offset := req.Config.Invoice.NumOffset //Read offset from Config file
+
+	jsonDir := fmt.Sprintf("%s/json/", req.Project)
+	entries, err := os.ReadDir(jsonDir)
 	check(err)
 	nextNum := offset + len(entries) + 1
 	return nextNum

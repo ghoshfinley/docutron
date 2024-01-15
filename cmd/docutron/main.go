@@ -1,65 +1,43 @@
 package main
 
 import (
-	"flag"
+	"encoding/json"
 	"fmt"
 	"log"
+	"net/http"
 
 	"github.com/minimalistsoftware/docutron"
 )
 
-var newFlag bool
-var calcFlag bool
-var htmlFlag bool
-var pdfFlag bool
-var nameFlag string
-var initFlag string
+func runNew(w http.ResponseWriter, r *http.Request) {
 
-func init() {
-	flag.BoolVar(&newFlag, "new", false, "Create new Invoice json file")
-	flag.BoolVar(&htmlFlag, "html", false, "Output HTML file in html/name.html")
-	flag.BoolVar(&pdfFlag, "pdf", false, "Output PDF file in pdf/name.pdf")
-	flag.StringVar(&nameFlag, "name", "", "Input filename to operate on eg. json/INV1.json")
-	flag.StringVar(&initFlag, "init", "", "Create new project directory")
-	flag.Parse()
+	var request docutron.UserRequest
+	err := json.NewDecoder(r.Body).Decode(&request)
+	if err != nil {
+		fmt.Printf("Error decoding: %s", err)
+		// return HTTP 400 bad request
+	}
+	fmt.Printf("Initialising project: %s\n", request.Project)
+
+	// If the project doesn't exist - create it
+	docutron.InitProject(request.Project)
+
+	// Create the JSON Skeleton
+	num := docutron.NextNumber(request)
+	inv := docutron.NewJSONFile(request, fmt.Sprintf("%s%d", request.Config.Invoice.Prefix, num))
+
+	// Write HTML Invoice from skeleton
+	docutron.WriteHTML(request, inv, request.Config.Invoice.Template)
+
+	// Write PDF Invoice from skeleton
+	docutron.WritePDFChrome(request, inv)
 }
 
 func main() {
-	if !newFlag && !calcFlag && !htmlFlag && initFlag == "" && nameFlag == "" {
-		flag.Usage()
-		return
-	}
 
-	if initFlag != "" {
-		docutron.InitProject(initFlag)
-		return
-	}
+	http.HandleFunc("/new", runNew)
 
-	config := docutron.ReadConfig()
-
-	if newFlag {
-		num := docutron.NextNumber()
-		docutron.NewJSONFile(fmt.Sprintf("%s%d", config.Invoice.Prefix, num))
-		return
-	}
-
-	if htmlFlag && nameFlag == "" {
-		log.Fatalf("-name flag must be set to use -html\n")
-	}
-	if htmlFlag {
-		inv := docutron.UnmarshalJSONFile(nameFlag)
-		inv = docutron.CalculateTotals(inv)
-		docutron.WriteHTML(inv, nameFlag, config.Invoice.Template)
-	}
-	if pdfFlag && nameFlag == "" {
-		log.Fatalf("-name flag must be set to use -pdf\n")
-	}
-	if pdfFlag {
-		inv := docutron.UnmarshalJSONFile(nameFlag)
-		inv = docutron.CalculateTotals(inv)
-		docutron.WriteHTML(inv, nameFlag, config.Invoice.Template)
-		//docutron.WritePDF(inv)
-		docutron.WritePDFChrome(inv)
-	}
+	fmt.Println(("Running server on :8081"))
+	log.Fatal(http.ListenAndServe(":8081", nil))
 
 }

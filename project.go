@@ -2,6 +2,7 @@ package docutron
 
 import (
 	"embed"
+	"fmt"
 	"log"
 	"os"
 	"path"
@@ -15,13 +16,21 @@ var templates embed.FS
 // InitProject creates a new directory and the skeleton config files.
 func InitProject(dirName string) {
 	dir := path.Clean(dirName)
-	err := os.Mkdir(dir, perms)
+
+	// If the directory already exists, stop init
+	if _, err := os.Stat(dir); err == nil {
+		fmt.Println("This project already has been setup. Nothing to add.")
+		return
+	}
+
+	// Otherwise create the directory
+	err := os.MkdirAll(dir, perms)
 	check(err)
 
 	subDirs := []string{"html", "json", "templates", "pdf"}
 	for _, d := range subDirs {
 		dPath := path.Join(dir, d)
-		err = os.Mkdir(dPath, perms)
+		err = os.MkdirAll(dPath, perms)
 		check(err)
 	}
 	confPath := path.Join(dir, "config.json")

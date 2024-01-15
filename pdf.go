@@ -49,18 +49,19 @@ func WritePDF(inv Invoice) {
 	log.Printf("wrote: %s\n", outFile)
 }
 
-/* WrotePDFChrome writes a PDF to disk using Chrome via chromedp.
+/*
+	WrotePDFChrome writes a PDF to disk using Chrome via chromedp.
 
 This got me better results than wkhtmltopdf for tables split across pages.
 
 I'd rather not have this dependency though.
 */
-func WritePDFChrome(inv Invoice) {
+func WritePDFChrome(req UserRequest, inv Invoice) {
 	// create context
 	ctx, cancel := chromedp.NewContext(context.Background())
 	defer cancel()
 
-	fileName := fmt.Sprintf("html/%s.html", inv.Title)
+	fileName := fmt.Sprintf("%s/html/%s.html", req.Project, inv.Title)
 
 	absPath, err := filepath.Abs(fileName)
 	check(err)
@@ -73,7 +74,7 @@ func WritePDFChrome(inv Invoice) {
 		log.Fatal(err)
 	}
 
-	outFile := fmt.Sprintf("pdf/%s.pdf", inv.Title)
+	outFile := fmt.Sprintf("%s/pdf/%s.pdf", req.Project, inv.Title)
 
 	if err := ioutil.WriteFile(outFile, buf, perms); err != nil {
 		log.Fatal(err)
